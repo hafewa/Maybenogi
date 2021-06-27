@@ -1,0 +1,92 @@
+﻿@page "/clients"
+
+@using Maybenogi.Shared.Model
+@inject IAlertService AlertService
+@inject IHttpService HttpService
+@inject HttpClient HttpClient
+
+<h3>Clients</h3>
+
+<button @onclick="@(RefreshClients)" disabled="@isWaiting" class="btn btn-sm btn-primary mr-1">
+    @if (isWaiting)
+    {
+        <span class="spinner-border spinner-border-sm"></span>
+    }
+    else
+    {
+        <span>새로고침</span>}
+</button>
+<p></p>
+
+@if (clients == null)
+{
+
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>PID</th>
+                <th>로그인 된 계정</th>
+                <th>도구</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var client in clients)
+            {
+                <tr>
+                    <td>@client.ProcessId</td>
+                    <td>확인되지 않음</td>
+                    <td style="white-space: nowrap">
+                        <button @onclick="@(() => OptimizeCpu(client.ProcessId))" disabled="@isWaiting" class="btn btn-sm btn-primary mr-2">
+                            @if (isWaiting)
+                            {
+                                <span class="spinner-border spinner-border-sm"></span>
+                            }
+                            else
+                            {
+                                <span>CPU Optimize</span>}
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+
+    private ClientContext[] clients;
+    private bool isWaiting = false;
+
+    private async void RefreshClients()
+    {
+        isWaiting = true;
+
+        await Task.Delay(100);
+        //clients = await HttpService.GetFromJsonAsync<ClientContext[]>("current_clients");
+        clients = await HttpClient.GetFromJsonAsync<ClientContext[]>("current_clients");
+
+        isWaiting = false;
+        AlertService.Success("Success!");
+
+        StateHasChanged();
+    }
+
+    private async void OptimizeCpu(int pid)
+    {
+        await Task.Delay(10);
+
+        await HttpClient.PostAsJsonAsync<int>("process_order", pid);
+        //await HttpService.PostAsJsonAsync<int>("process_order", pid);
+
+        //await Http.PostAsync("process_order", pid);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        clients = await HttpClient.GetFromJsonAsync<ClientContext[]>("current_clients");
+        //clients = await HttpService.GetFromJsonAsync<ClientContext[]>("current_clients");
+    }
+}

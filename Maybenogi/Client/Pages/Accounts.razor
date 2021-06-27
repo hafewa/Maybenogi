@@ -1,0 +1,98 @@
+﻿@page "/accounts"
+@using Maybenogi.Shared.Model
+@inject IAccountService AccountService
+@inject IAlertService AlertService
+@inject IHttpService HttpService
+
+<h3>Accounts</h3>
+
+<button @onclick="@(() => {})" class="btn btn-sm btn-primary mr-1">Export</button>
+<button @onclick="@(() => {})" class="btn btn-sm btn-primary mr-2">Import</button>
+@*<button @onclick="@(() => { Test();})" class="btn btn-sm btn-primary mr-2">Test</button>*@
+<p></p>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>캐릭명</th>
+            <th>이메일</th>
+            <th>마지막 로그인 시간</th>
+            <th>현재 켜짐 여부</th>
+            <th>도구</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (users != null)
+        {
+            foreach (var user in users)
+            {
+                <tr>
+                    <td>@user.DisplayName</td>
+                    <td>@user.Email</td>
+                    @*<td>@($"{user.LatestSignedInTime.ToLongDateString()}, {user.LatestSignedInTime.ToLongTimeString()}")</td>*@
+                    <td>@(GetKoreanTime(user.LastSignedInTime))</td>
+                    <td>N/A</td>
+                    <td style="white-space: nowrap">
+                        <NavLink href="@($"users/edit/{user.UID}")" class="btn btn-sm btn-primary mr-1">편집</NavLink>
+                        <button @onclick="@(() => DeleteUser(user.UID))" disabled="@user.IsDeleting" class="btn btn-sm btn-danger btn-delete-user">
+                            @if (user.IsDeleting)
+                            {
+                                <span class="spinner-border spinner-border-sm"></span>
+                            }
+                            else
+                            {
+                                <span>삭제</span>}
+                        </button>
+                    </td>
+                </tr>
+}
+        }
+        @if (loading)
+        {
+            <tr>
+                <td colspan="4" class="text-center">
+                    <span class="spinner-border spinner-border-lg align-center"></span>
+                </td>
+            </tr>
+}
+    </tbody>
+</table>
+
+@code {
+    private bool loading;
+    private IList<NexonAccount> users;
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+
+        users = await AccountService.GetAllAccounts();
+
+        loading = false;
+    }
+
+    private string GetKoreanTime(DateTime dt)
+    {
+        var timeDiff = DateTime.Now - dt;
+        if (timeDiff.TotalHours > 1)
+        {
+            CultureInfo cultures = CultureInfo.CreateSpecificCulture("ko-KR");
+            return dt.ToString(string.Format("yyyy년 MM월 dd일 hh시 mm분", cultures));
+        }
+        else
+        {
+            return $"{timeDiff.TotalMinutes:0}분 전";
+        }
+    }
+
+    private async void DeleteUser(long id)
+    {
+        var user = users.First(x => x.UID == id);
+
+        user.IsDeleting = true;
+        await AccountService.DeleteAccount(id);
+
+        users.Remove(user);
+
+        StateHasChanged();
+    }
+}
