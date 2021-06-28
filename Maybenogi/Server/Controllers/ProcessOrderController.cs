@@ -1,15 +1,21 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Maybenogi.Server.Mabinogi;
+using Maybenogi.Server.Module;
+using Maybenogi.Shared;
+using Maybenogi.Shared.Model;
+using Microsoft.AspNetCore.Cors;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace Maybenogi.Server.Controllers
 {
-    [Route("process_order")]
+    [Route(ApiRoute.OPTIMIZATION)]
+    [EnableCors(Constant.CORS)]
     [ApiController]
     public class ProcessOrderController : ControllerBase
     {
@@ -31,7 +37,19 @@ namespace Maybenogi.Server.Controllers
         [HttpPost]
         public void Post([FromBody] int value)
         {
-            MabiManager.SetProcessOrder(value, true);
+            foreach (var client in SeleniumHandler.Instance.managedClients.Values)
+            {
+                if (client.ProcessId == value)
+                {
+                    MabiManager.SetProcessOrder(value, true);
+                    client.ClientState = EClientState.Main;
+                }
+                else
+                {
+                    MabiManager.SetProcessOrder(value, false);
+                    client.ClientState = EClientState.Sub;
+                }
+            }
         }
 
         // PUT api/<ProcessOrderController>/5

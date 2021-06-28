@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 
 namespace Maybenogi.Shared.Model
 {
-    public class NexonAccount
+    public class EditNexonAccount
     {
         public long UID { get; set; }
 
@@ -15,24 +15,26 @@ namespace Maybenogi.Shared.Model
 
         public string Description { get; set; }
 
-        public DateTime CreationTime { get; set; }
         public DateTime LastSignedInTime { get; set; }
         public DateTime LastModifiedTime { get; set; }
 
         // temp values
         public bool IsDeleting { get; set; }
 
-        public void Import(EditNexonAccount acc)
+        public EditNexonAccount Import(NexonAccount modified)
         {
-            DisplayName = acc.DisplayName;
-            Email = acc.Email;
-            Password = acc.Password;
-            AccountType = acc.AccountType;
-            IsActive = acc.IsActive;
-            Description = acc.Description;
-            LastSignedInTime = acc.LastSignedInTime;
-            LastModifiedTime = acc.LastModifiedTime;
-            IsDeleting = acc.IsDeleting;
+            UID = modified.UID;
+            DisplayName = modified.DisplayName;
+            Email = modified.Email;
+            Password = modified.Password;
+            AccountType = modified.AccountType;
+            IsActive = modified.IsActive;
+            Description = modified.Description;
+            LastSignedInTime = modified.LastSignedInTime;
+            LastModifiedTime = modified.LastModifiedTime;
+            IsDeleting = modified.IsDeleting;
+
+            return this;
         }
     }
 }

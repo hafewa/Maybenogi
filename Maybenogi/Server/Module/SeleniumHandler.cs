@@ -103,10 +103,10 @@ namespace Maybenogi.Server.Module
 
         public void OnProcessRemoved(int processId)
         {
-            if (managedClients.TryGetValue(processId, out var client))
-            {
-                managedClients.Remove(processId);
-            }
+            //if (managedClients.TryGetValue(processId, out var client))
+            //{
+            //    managedClients.Remove(processId);
+            //}
         }
     }
 }

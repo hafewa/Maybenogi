@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using Maybenogi.Server.Module;
+using Maybenogi.Shared;
 using Maybenogi.Shared.Model;
 using Microsoft.AspNetCore.Cors;
 using Newtonsoft.Json;
@@ -9,7 +10,7 @@ using Newtonsoft.Json;
 namespace Maybenogi.Server.Controllers
 {
     [EnableCors(Constant.CORS)]
-    [Route("api/options")]
+    [Route(ApiRoute.SETTING)]
     [ApiController]
     public class OptionController : ControllerBase
     {

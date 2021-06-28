@@ -29,6 +29,7 @@ else
             <tr>
                 <th>PID</th>
                 <th>로그인 된 계정</th>
+                <th>클라이언트 상태</th>
                 <th>도구</th>
             </tr>
         </thead>
@@ -38,6 +39,7 @@ else
                 <tr>
                     <td>@client.ProcessId</td>
                     <td>@client.AccountName</td>
+                    <td>@client.ClientState.ToString()</td>
                     <td style="white-space: nowrap">
                         <button @onclick="@(() => OptimizeCpu(client.ProcessId))" disabled="@isWaiting" class="btn btn-sm btn-primary mr-2">
                             @if (isWaiting)
@@ -46,7 +48,7 @@ else
                             }
                             else
                             {
-                                <span>CPU Optimize</span>}
+                                <span>Set Main Client</span>}
                         </button>
                     </td>
                 </tr>
@@ -66,7 +68,7 @@ else
 
         await Task.Delay(100);
         //clients = await HttpService.GetFromJsonAsync<ClientContext[]>("current_clients");
-        clients = await HttpClient.GetFromJsonAsync<ClientContext[]>("api/clients");
+        clients = await HttpClient.GetFromJsonAsync<ClientContext[]>(ApiRoute.CLIENT);
 
         isWaiting = false;
         AlertService.Success("Success!");
@@ -78,7 +80,13 @@ else
     {
         await Task.Delay(10);
 
-        await HttpClient.PostAsJsonAsync<int>("process_order", pid);
+        await HttpClient.PostAsJsonAsync<int>(ApiRoute.OPTIMIZATION, pid);
+        await Task.Delay(50);
+        
+        clients = await HttpClient.GetFromJsonAsync<ClientContext[]>(ApiRoute.CLIENT);
+
+        StateHasChanged();
+
         //await HttpService.PostAsJsonAsync<int>("process_order", pid);
 
         //await Http.PostAsync("process_order", pid);
@@ -86,7 +94,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        clients = await HttpClient.GetFromJsonAsync<ClientContext[]>("api/clients");
+        clients = await HttpClient.GetFromJsonAsync<ClientContext[]>(ApiRoute.CLIENT);
         //clients = await HttpService.GetFromJsonAsync<ClientContext[]>("current_clients");
     }
 }

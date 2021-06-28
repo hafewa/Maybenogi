@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Maybenogi.Shared;
 using Maybenogi.Shared.Model;
 using Microsoft.AspNetCore.Cors;
 using Newtonsoft.Json;
@@ -12,7 +13,7 @@ using Newtonsoft.Json;
 namespace Maybenogi.Server.Controllers
 {
     [EnableCors(Constant.CORS)]
-    [Route("api/accounts")]
+    [Route(ApiRoute.ACCOUNT)]
     [ApiController]
     public class AccountController : ControllerBase
     {
@@ -32,7 +33,10 @@ namespace Maybenogi.Server.Controllers
                 {
                     Console.WriteLine(e.FullName);
 
-                    return JsonConvert.DeserializeObject<NexonAccount>(System.IO.File.ReadAllText(e.FullName));
+                    var deserialized =
+                        JsonConvert.DeserializeObject<NexonAccount>(System.IO.File.ReadAllText(e.FullName));
+
+                    return deserialized;
                 })
                 .ToArray();
         }
@@ -86,6 +90,18 @@ namespace Maybenogi.Server.Controllers
                 LastSignedInTime = DateTime.Now,
             };
 
+            System.IO.File.WriteAllText($"accounts/{ConvertFromId(acc.UID)}.nxmbng", JsonConvert.SerializeObject(acc));
+        }
+
+        [HttpPost("edit")]
+        public void Edit([FromBody] EditNexonAccount account)
+        {
+            if (account == null) return;
+
+            var nexonAccJson = Get((int)account.UID);
+            var acc = JsonConvert.DeserializeObject<NexonAccount>(nexonAccJson);
+            acc.Import(account);
+            
             System.IO.File.WriteAllText($"accounts/{ConvertFromId(acc.UID)}.nxmbng", JsonConvert.SerializeObject(acc));
         }
 

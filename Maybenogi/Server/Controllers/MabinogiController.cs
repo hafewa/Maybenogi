@@ -1,24 +1,23 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Maybenogi.Server.Module;
+using Maybenogi.Shared;
 using Maybenogi.Shared.Model;
 using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
 namespace Maybenogi.Server.Controllers
 {
     [EnableCors(Constant.CORS)]
-    [Route("api/launch")]
+    [Route(ApiRoute.BOOTSTRAP)]
     [ApiController]
-    public class BootstrapController : ControllerBase
+    public class MabinogiController : ControllerBase
     {
-        [HttpGet("{id}")]
-        public async Task<ClientContext> Get(int id)
+        [HttpGet("launch/{accountId:int}")]
+        public async Task<ClientContext> Create(int accountId)
         {
             var clientContext = new ClientContext();
             
@@ -26,7 +25,9 @@ namespace Maybenogi.Server.Controllers
             if (!di.Exists)
                 di.Create();
 
-            var fi = new FileInfo(di.FullName + $"/{id:00000000}.nxmbng");
+            var fiPath = di.FullName + $"/{accountId:00000000}.nxmbng";
+            var fi = new FileInfo(fiPath);
+
             if (!fi.Exists) return clientContext;
 
             var json = await System.IO.File.ReadAllTextAsync(fi.FullName);
@@ -45,6 +46,29 @@ namespace Maybenogi.Server.Controllers
             SeleniumHandler.Instance.managedClients[result.Id] = clientContext;
 
             return clientContext;
+        }
+
+        [HttpGet("dispose/{processId:int}")]
+        public async Task<bool> Dispose(int processId)
+        {
+            try
+            {
+                Process.GetProcessById(processId)?.Kill(true);
+
+                if (SeleniumHandler.Instance.managedClients.TryGetValue(processId, out var client))
+                {
+                    SeleniumHandler.Instance.managedClients.Remove(processId);
+                }
+
+                await Task.Delay(100);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Exception] {ex.Message}");
+            }
+            
+            return false;
         }
     }
 }

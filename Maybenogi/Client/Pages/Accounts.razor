@@ -1,5 +1,4 @@
 ﻿@page "/accounts"
-@using Maybenogi.Shared.Model
 @inject IAccountService AccountService
 @inject IAlertService AlertService
 @inject IHttpService HttpService
@@ -7,74 +6,204 @@
 
 <h3>Accounts</h3>
 
-<button @onclick="@(() => {})" class="btn btn-sm btn-primary mr-1">Export</button>
-<button @onclick="@(() => {})" class="btn btn-sm btn-primary mr-2">Import</button>
-@*<button @onclick="@(() => { Test();})" class="btn btn-sm btn-primary mr-2">Test</button>*@
 <p></p>
 <table class="table table-striped">
     <thead>
-        <tr>
-            <th>캐릭명</th>
-            <th>이메일</th>
-            <th>메모</th>
-            <th>마지막 로그인 시간</th>
-            <th>현재 켜짐 여부</th>
-            <th>도구</th>
-            <th>클라이언트</th>
-        </tr>
+    <tr>
+        <th>활성화</th>
+        <th>캐릭명</th>
+        <th>이메일</th>
+        <th>메모</th>
+        <th>마지막 로그인 시간</th>
+        <th>도구</th>
+        <th>프로세스 ID</th>
+        <th>클라이언트</th>
+    </tr>
     </thead>
     <tbody>
-        @if (users != null)
-        {
-            foreach (var user in users)
-            {
-                <tr>
-                    <td>@user.DisplayName</td>
-                    <td>@user.Email</td>
-                    <td>@user.Description</td>
-                    @*<td>@($"{user.LatestSignedInTime.ToLongDateString()}, {user.LatestSignedInTime.ToLongTimeString()}")</td>*@
-                    <td>@(GetKoreanTime(user.LastSignedInTime))</td>
-                    <td>N/A</td>
-                    <td style="white-space: nowrap">
-                        <NavLink href="@($"users/edit/{user.UID}")" class="btn btn-sm btn-primary mr-1">편집</NavLink>
-                        <button @onclick="@(() => DeleteUser(user.UID))" disabled="@user.IsDeleting" class="btn btn-sm btn-danger btn-delete-user">
-                            @if (user.IsDeleting)
-                            {
-                                <span class="spinner-border spinner-border-sm"></span>
-                            }
-                            else
-                            {
-                                <span>삭제</span>}
-                        </button>
-                    </td>
-                    <td style="white-space: nowrap">
-                        <button @onclick="@(() => {LaunchClient(user.UID);})" class="btn btn-sm btn-primary mr-1">Export</button>
-                        <NavLink href="@($"users/edit/{user.UID}")" class="btn btn-sm mr-3">종료</NavLink>
-                    </td>
-                </tr>
-}
-        }
-        @if (loading)
+    @if (users != null)
+    {
+        foreach (var user in users)
         {
             <tr>
-                <td colspan="4" class="text-center">
-                    <span class="spinner-border spinner-border-lg align-center"></span>
+                <td style="white-space: nowrap">
+                    @if (user.IsActive)
+                    {
+                        <button @onclick="@(() => { TurnOff(user); })" disabled="@loading" class="btn btn-sm btn-primary mr-1">ON</button>
+                    }
+                    else
+                    {
+                        <button @onclick="@(() => { TurnOn(user); })" disabled="@IsFullActive()" class="btn btn-sm btn-danger mr-1">OFF</button>
+                    }
+
+                </td>
+                <td>@user.DisplayName</td>
+                <td>@user.Email</td>
+                <td>@user.Description</td>
+                <td>@(GetKoreanTime(user.LastSignedInTime))</td>
+                <td style="white-space: nowrap">
+                    @*<NavLink href="@($"users/edit/{user.UID}")" disabled="@loading" class="btn btn-sm btn-primary mr-1">편집</NavLink>*@
+                    <button @onclick="@(() => DeleteUser(user.UID))" disabled="@loading" class="btn btn-sm btn-danger btn-delete-user">
+                        @if (user.IsDeleting)
+                        {
+                            <span class="spinner-border spinner-border-sm"></span>
+                        }
+                        else
+                        {
+                            <span>삭제</span>}
+                    </button>
+                </td>
+                <td>@GetMatchedClientProcessId(user.UID)</td>
+                <td style="white-space: nowrap">
+                    @if (clients.Select(c => c.AccountId).Contains(user.UID))
+                    {
+                        <button @onclick="@(() => { DisposeClient(user.UID); })" disabled="@loading" class="btn btn-sm btn-danger mr-1">종료</button>
+                    }
+                    else
+                    {
+                        <button @onclick="@(() => { LaunchClient(user.UID); })" disabled="@loading" class="btn btn-sm btn-primary mr-1">실행</button>
+                    }
+
                 </td>
             </tr>
-}
+        }
+    }
+    @if (loading)
+    {
+        <tr>
+            <td colspan="4" class="text-center">
+                <span class="spinner-border spinner-border-lg align-center"></span>
+            </td>
+        </tr>
+    }
     </tbody>
 </table>
+<p></p>
+<button @onclick="@(RunAllClients)" disabled="@loading" class="btn btn-sm btn-primary mr-1">선택된 클라이언트 모두 실행</button>
 
 @code {
     private bool loading;
     private IList<NexonAccount> users;
+    private ClientContext[] clients;
+
+    private async void RunAllClients()
+    {
+        loading = true;
+        foreach (var user in users)
+        {
+            if (user.IsActive)
+            {
+                await LaunchClient_Internal(user.UID);
+            }
+        }
+        
+        loading = false;
+        StateHasChanged();
+    }
+
+    private string GetMatchedClientProcessId(long uid)
+    {
+        var found = ClientIDToProcessId(uid);
+        if (found == 0)
+        {
+            return "N/A";
+        }
+        else
+        {
+            return found.ToString();
+        }
+    }
+
+    private int ClientIDToProcessId(long uid)
+    {
+        var found = clients.FirstOrDefault(e => e.AccountId == uid);
+        if (found == null)
+        {
+            return 0;
+        }
+        else
+        {
+            return found.ProcessId;
+        }
+    }
+
+    private async void TurnOff(NexonAccount account)
+    {
+        loading = true;
+
+        account.IsActive = false;
+        var editContext = new EditNexonAccount().Import(account);
+        await HttpClient.PostAsJsonAsync<EditNexonAccount>($"{ApiRoute.ACCOUNT}/edit", editContext);
+
+        await Task.Delay(50);
+
+        await Refresh();
+
+        loading = false;
+        StateHasChanged();
+    }
+
+    private async void TurnOn(NexonAccount account)
+    {
+        if (CanOn(account))
+        {
+            loading = true;
+
+            account.IsActive = true;
+            var editContext = new EditNexonAccount().Import(account);
+            await HttpClient.PostAsJsonAsync<EditNexonAccount>($"{ApiRoute.ACCOUNT}/edit", editContext);
+
+            await Task.Delay(50);
+
+            await Refresh();
+
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private bool CanOn(NexonAccount account)
+    {
+        return users.Where(e => !ReferenceEquals(e, account))
+            .Count(e => e.IsActive) < 4;
+    }
+
+    private bool IsFullActive()
+    {
+        return users
+            .Count(e => e.IsActive) >= 4;
+    }
 
     private async void LaunchClient(long uid)
     {
         loading = true;
 
-        var result = await HttpClient.GetFromJsonAsync<ClientContext>($"api/launch/{uid}");
+        await Task.Run(() => LaunchClient_Internal(uid));
+        
+        loading = false;
+
+        StateHasChanged();}
+
+    private async Task LaunchClient_Internal(long uid)
+    {
+        Console.WriteLine($"UID : {uid}");
+        var result = await HttpClient.GetFromJsonAsync<ClientContext>($"{ApiRoute.BOOTSTRAP}/launch/{(int) uid}");
         Console.WriteLine($"Result : {result.ProcessId}");
+
+        await Refresh();
+    }
+
+    private async void DisposeClient(long clientId)
+    {
+        loading = true;
+
+        var processId = ClientIDToProcessId(clientId);
+
+        var result = await HttpClient.GetFromJsonAsync<bool>($"{ApiRoute.BOOTSTRAP}/dispose/{processId}");
+        Console.WriteLine($"Result : {result}");
+
+        await Refresh();
+        await Task.Delay(100);
 
         loading = false;
 
@@ -85,22 +214,34 @@
     {
         loading = true;
 
-        users = await AccountService.GetAllAccounts();
+        await Refresh();
 
         loading = false;
+    }
+
+    private async Task Refresh()
+    {
+        users = await AccountService.GetAllAccounts();
+
+        clients = await HttpClient.GetFromJsonAsync<ClientContext[]>(ApiRoute.CLIENT);
+        if (clients == null) clients = new ClientContext[0];
     }
 
     private string GetKoreanTime(DateTime dt)
     {
         var timeDiff = DateTime.Now - dt;
-        if (timeDiff.TotalHours > 1)
+        if (timeDiff.TotalMinutes < 60)
         {
-            CultureInfo cultures = CultureInfo.CreateSpecificCulture("ko-KR");
-            return dt.ToString(string.Format("yyyy년 MM월 dd일 hh시 mm분", cultures));
+            return $"{timeDiff.TotalMinutes:0}분 전";
+        }
+        else if (timeDiff.TotalHours < 12)
+        {
+            return $"{timeDiff.TotalHours:0}시간 전";
         }
         else
         {
-            return $"{timeDiff.TotalMinutes:0}분 전";
+            CultureInfo cultures = CultureInfo.CreateSpecificCulture("ko-KR");
+            return dt.ToString(string.Format("yyyy년 MM월 dd일 hh시 mm분", cultures));
         }
     }
 
@@ -115,4 +256,5 @@
 
         StateHasChanged();
     }
+
 }

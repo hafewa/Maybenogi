@@ -2,6 +2,7 @@
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using Maybenogi.Shared;
 using Maybenogi.Shared.Model;
 
 namespace Maybenogi.Client.Services
@@ -25,12 +26,12 @@ namespace Maybenogi.Client.Services
 
         public async Task Register(CreateNexonAccount account)
         {
-            await _httpClient.PostAsJsonAsync<CreateNexonAccount>("api/accounts", account);
+            await _httpClient.PostAsJsonAsync<CreateNexonAccount>(ApiRoute.ACCOUNT, account);
         }
 
         public async Task<IList<NexonAccount>> GetAllAccounts()
         {
-            var result = await _httpClient.GetFromJsonAsync<NexonAccount[]>("api/accounts");
+            var result = await _httpClient.GetFromJsonAsync<NexonAccount[]>(ApiRoute.ACCOUNT);
             return result;
         }
 
@@ -41,7 +42,7 @@ namespace Maybenogi.Client.Services
 
         public async Task<NexonAccount> GetAccount(long uid)
         {
-            return await _httpClient.GetFromJsonAsync<NexonAccount>($"api/accounts/{uid}");
+            return await _httpClient.GetFromJsonAsync<NexonAccount>($"{ApiRoute.ACCOUNT}/{uid}");
         }
     }
 }

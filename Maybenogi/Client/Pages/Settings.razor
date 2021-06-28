@@ -61,7 +61,7 @@
     private async void OnValidSubmit()
     {
         loading = true;
-        await HttpClient.PostAsJsonAsync("api/options", model);
+        await HttpClient.PostAsJsonAsync(ApiRoute.SETTING, model);
 
         await Task.Delay(300);
         loading = false;
@@ -72,7 +72,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        model = await HttpClient.GetFromJsonAsync<Option>("api/options");
+        model = await HttpClient.GetFromJsonAsync<Option>(ApiRoute.SETTING);
         
         StateHasChanged();
     }
