@@ -15,22 +15,14 @@ namespace Maybenogi.Server
         public static void Main(string[] args)
         {
             ProcessWatcher pw = ProcessWatcher.Instance;
+            SeleniumHandler sh = SeleniumHandler.Instance;
+
             pwThread = new Thread(new ThreadStart(pw.Update));
             pwThread.Start();
 
-            pw.Subscribe("Client", onAttach, onDetach);
+            pw.Subscribe("Client", sh.OnNewProcessFound, sh.OnProcessRemoved);
 
             CreateHostBuilder(args).Build().Run();
-
-            void onAttach(Process proc)
-            {
-                Console.WriteLine($"Attached!! : {proc.Id}");
-            }
-
-            void onDetach(int pid)
-            {
-                Console.WriteLine($"Detached!! : {pid}");
-            }
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args)

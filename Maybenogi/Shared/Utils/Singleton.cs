@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Maybenogi.Shared.Utils
 {
-    public class Singleton<T> where T : class, new()
+    public class Singleton<T> where T : Singleton<T>, new()
     {
         private static T instance = default;
 
@@ -14,10 +14,21 @@ namespace Maybenogi.Shared.Utils
                 if (instance == default)
                 {
                     instance = new T();
+                    instance.ctor();
                 }
 
                 return instance;
             }
+        }
+
+        protected Singleton()
+        {
+            
+        }
+
+        protected virtual void ctor()
+        {
+
         }
     }
 }

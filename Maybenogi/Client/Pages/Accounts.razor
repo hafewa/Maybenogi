@@ -3,6 +3,7 @@
 @inject IAccountService AccountService
 @inject IAlertService AlertService
 @inject IHttpService HttpService
+@inject HttpClient HttpClient
 
 <h3>Accounts</h3>
 
@@ -15,9 +16,11 @@
         <tr>
             <th>캐릭명</th>
             <th>이메일</th>
+            <th>메모</th>
             <th>마지막 로그인 시간</th>
             <th>현재 켜짐 여부</th>
             <th>도구</th>
+            <th>클라이언트</th>
         </tr>
     </thead>
     <tbody>
@@ -28,6 +31,7 @@
                 <tr>
                     <td>@user.DisplayName</td>
                     <td>@user.Email</td>
+                    <td>@user.Description</td>
                     @*<td>@($"{user.LatestSignedInTime.ToLongDateString()}, {user.LatestSignedInTime.ToLongTimeString()}")</td>*@
                     <td>@(GetKoreanTime(user.LastSignedInTime))</td>
                     <td>N/A</td>
@@ -42,6 +46,10 @@
                             {
                                 <span>삭제</span>}
                         </button>
+                    </td>
+                    <td style="white-space: nowrap">
+                        <button @onclick="@(() => {LaunchClient(user.UID);})" class="btn btn-sm btn-primary mr-1">Export</button>
+                        <NavLink href="@($"users/edit/{user.UID}")" class="btn btn-sm mr-3">종료</NavLink>
                     </td>
                 </tr>
 }
@@ -60,6 +68,18 @@
 @code {
     private bool loading;
     private IList<NexonAccount> users;
+
+    private async void LaunchClient(long uid)
+    {
+        loading = true;
+
+        var result = await HttpClient.GetFromJsonAsync<ClientContext>($"api/launch/{uid}");
+        Console.WriteLine($"Result : {result.ProcessId}");
+
+        loading = false;
+
+        StateHasChanged();
+    }
 
     protected override async Task OnInitializedAsync()
     {

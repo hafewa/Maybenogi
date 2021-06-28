@@ -37,7 +37,7 @@ else
             {
                 <tr>
                     <td>@client.ProcessId</td>
-                    <td>확인되지 않음</td>
+                    <td>@client.AccountName</td>
                     <td style="white-space: nowrap">
                         <button @onclick="@(() => OptimizeCpu(client.ProcessId))" disabled="@isWaiting" class="btn btn-sm btn-primary mr-2">
                             @if (isWaiting)
@@ -66,7 +66,7 @@ else
 
         await Task.Delay(100);
         //clients = await HttpService.GetFromJsonAsync<ClientContext[]>("current_clients");
-        clients = await HttpClient.GetFromJsonAsync<ClientContext[]>("current_clients");
+        clients = await HttpClient.GetFromJsonAsync<ClientContext[]>("api/clients");
 
         isWaiting = false;
         AlertService.Success("Success!");
@@ -86,7 +86,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        clients = await HttpClient.GetFromJsonAsync<ClientContext[]>("current_clients");
+        clients = await HttpClient.GetFromJsonAsync<ClientContext[]>("api/clients");
         //clients = await HttpService.GetFromJsonAsync<ClientContext[]>("current_clients");
     }
 }

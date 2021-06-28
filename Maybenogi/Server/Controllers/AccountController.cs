@@ -25,13 +25,14 @@ namespace Maybenogi.Server.Controllers
                 di.Create();
 
             var files = di.GetFiles("*.nxmbng");
+            if (files.Length < 1) return new NexonAccount[0];
 
             return files
                 .Select(e =>
                 {
                     Console.WriteLine(e.FullName);
 
-                    return JsonConvert.DeserializeObject<NexonAccount>(e.FullName);
+                    return JsonConvert.DeserializeObject<NexonAccount>(System.IO.File.ReadAllText(e.FullName));
                 })
                 .ToArray();
         }
@@ -44,8 +45,8 @@ namespace Maybenogi.Server.Controllers
             if (!di.Exists)
                 di.Create();
 
-            var fi = new FileInfo(di.FullName + $"/{id}.nxmbng");
-            return JsonConvert.SerializeObject(fi);
+            var fi = new FileInfo(di.FullName + $"/{id:00000000}.nxmbng");
+            return System.IO.File.ReadAllText(fi.FullName);
         }
 
         // POST api/<AccountController>
@@ -58,7 +59,9 @@ namespace Maybenogi.Server.Controllers
             if (!di.Exists)
                 di.Create();
 
-            var files = di.GetFiles("*.nxmbng").OrderBy(e=>e.Name).LastOrDefault();
+            var files = di.GetFiles("*.nxmbng")
+                .OrderBy(e=>e.Name)
+                .LastOrDefault();
 
             long uid = 0;
             if (files != null && files.Exists)
@@ -83,7 +86,7 @@ namespace Maybenogi.Server.Controllers
                 LastSignedInTime = DateTime.Now,
             };
 
-            System.IO.File.WriteAllText($"accounts/{acc.UID}.nxmbng", JsonConvert.SerializeObject(acc));
+            System.IO.File.WriteAllText($"accounts/{ConvertFromId(acc.UID)}.nxmbng", JsonConvert.SerializeObject(acc));
         }
 
         // PUT api/<AccountController>/5
@@ -96,6 +99,12 @@ namespace Maybenogi.Server.Controllers
         [HttpDelete("{id}")]
         public void Delete(int id)
         {
+
+        }
+
+        private string ConvertFromId(long uid)
+        {
+            return $"{uid:00000000}";
         }
     }
 }

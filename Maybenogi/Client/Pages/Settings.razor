@@ -1,7 +1,79 @@
 ﻿@page "/settings"
+@inject HttpClient HttpClient
 
 <h3>Settings</h3>
+<div class="card">
+    <h4 class="card-header"></h4>
+    <div class="card-body">
+        @if (model == null)
+        {
+            <h4 colspan="4" class="text-center">
+                <span class="spinner-border spinner-border-lg align-center"></span>
+            </h4>
+        }
+        else
+        {
+            <EditForm Model="@model" OnValidSubmit="@OnValidSubmit">
+                <DataAnnotationsValidator/>
+                <div class="form-group">
+                    <label for="browserWidth">Browser Width</label>
+                    <InputNumber class="form-control" id="browserWidth" @bind-Value="@model.BrowserWidth"/>
+                    <ValidationMessage For="@(() => model.BrowserWidth)"/>
+                </div>
+                <div class="form-group">
+                    <label for="browserHeight">Browser Width</label>
+                    <InputNumber class="form-control" id="browserHeight" @bind-Value="@model.BrowserHeight"/>
+                    <ValidationMessage For="@(() => model.BrowserHeight)"/>
+                </div>
+                <div class="form-group">
+                    <label for="headless">Headless</label>
+                    <InputCheckbox class="form-control" id="headless" @bind-Value="@model.Headless"/>
+                    <ValidationMessage For="@(() => model.Headless)"/>
+                </div>
+                <div class="form-group">
+                    <label for="chromeCachePath">Chrome Cache Path</label>
+                    <InputText class="form-control" id="chromeCachePath" @bind-Value="@model.ChromeCachePath"/>
+                    <ValidationMessage For="@(() => model.ChromeCachePath)"/>
+                </div>
+                <div class="form-group">
+                    <label for="firefoxCachePath">Firefox Cache Path</label>
+                    <InputText class="form-control" id="firefoxCachePath" @bind-Value="@model.FirefoxCachePath"/>
+                    <ValidationMessage For="@(() => model.FirefoxCachePath)"/>
+                </div>
+                <p></p>
+                <button disabled="@loading" class="btn btn-primary">
+                    @if (loading)
+                    {
+                        <span class="spinner-border spinner-border-sm mr-1"></span>
+                    }
+                    저장
+                </button>
+            </EditForm>
+        }
+    </div>
+</div>
 
 @code {
+    private bool loading;
+    private Option model;
+    private EBrowserType accountType;
 
+    private async void OnValidSubmit()
+    {
+        loading = true;
+        await HttpClient.PostAsJsonAsync("api/options", model);
+
+        await Task.Delay(300);
+        loading = false;
+
+        StateHasChanged();
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        model = await HttpClient.GetFromJsonAsync<Option>("api/options");
+        
+        StateHasChanged();
+    }
 }

@@ -1,6 +1,4 @@
 ﻿@page "/register"
-@using Microsoft.AspNetCore.Components
-@using Maybenogi.Shared.Model
 @inject IAccountService AccountService
 @inject IAlertService AlertService
 @inject NavigationManager NavigationManager
@@ -9,7 +7,7 @@
 
 <div class="card">
     <h4 class="card-header"></h4>
-    <div class="card-body" width="50%">
+    <div class="card-body">
         <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
             <DataAnnotationsValidator />
             <div class="form-group">
@@ -18,7 +16,7 @@
                 <ValidationMessage For="@(() => model.DisplayName)" />
             </div>
             <div class="form-group">
-                <label>ID</label>
+                <label>Email</label>
                 <InputText @bind-Value="model.Email" class="form-control" />
                 <ValidationMessage For="@(() => model.Email)" />
             </div>
@@ -27,6 +25,25 @@
                 <InputText @bind-Value="model.Password" type="password" class="form-control" />
                 <ValidationMessage For="@(() => model.Password)" />
             </div>
+            @*<div class="form-group">
+                <label>Account Type</label>
+                <select class="custom-select" @onchange="OnValueChanged" title="AccountType is required ">
+                    <option accoutType="Select" selected="@accountType" disabled="disabled">(Choose Type)</option>
+
+                    @foreach (ENexonAccountType accType in Enum.GetValues(typeof(ENexonAccountType)))
+                    {
+                        <option accoutType="@accType"> @accType.ToString()</option>
+                    }
+                </select>
+            </div>*@
+
+            <div class="form-group">
+                <label>Description</label>
+                <InputText @bind-Value="model.Description" class="form-control" />
+                <ValidationMessage For="@(() => model.Description)" />
+            </div>
+            
+
             <button disabled="@loading" class="btn btn-primary">
                 @if (loading)
                 {
@@ -44,6 +61,13 @@
     private bool loading;
     private CreateNexonAccount model = new CreateNexonAccount();
 
+    private ENexonAccountType accountType = ENexonAccountType.Nexon;
+
+    private async void OnValueChanged()
+    {
+        //model.AccountType = ;
+    }
+
     private async void OnValidSubmit()
     {
         AlertService.Clear();
@@ -54,11 +78,12 @@
             await AccountService.Register(model);
 
             AlertService.Success("추가 성공", keepAfterRouteChange: true);
-            // NavigationManager.NavigateTo("accounts");
-
-            //await Task.Delay(2000);
+            await Task.Delay(500);
 
             loading = false;
+            model = new CreateNexonAccount();
+
+            StateHasChanged();
         }
         catch (Exception ex)
         {
